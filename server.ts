@@ -26,6 +26,10 @@ const ai = process.env.GEMINI_API_KEY
     })
   : null;
 
+// Health checks para probes de Cloud Run y despliegues
+app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
+app.get('/healthz', (_req, res) => res.status(200).json({ status: 'ok' }));
+
 // Endpoint M5: Análisis de Torneo y Criterios de Desempate
 app.post('/api/gemini/analyze-tournament', async (req, res) => {
   try {
@@ -307,7 +311,10 @@ async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: process.env.DISABLE_HMR === 'true' ? false : undefined,
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
