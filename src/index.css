@@ -1,1 +1,22 @@
 @import "tailwindcss";
+
+/* M3: Ergonomía táctil para uso en celular con una mano bajo el sol del recreo */
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  input, select, textarea, button {
+    font-size: 16px; /* Evita zoom involuntario de iOS en campos de texto */
+  }
+}
+
+/* Scrollbar táctil suave */
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
