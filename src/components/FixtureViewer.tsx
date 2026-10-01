@@ -18,7 +18,19 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
   onResetMatches,
 }) => {
   const [selectedRound, setSelectedRound] = useState<number | 'all'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'finished' | 'pending'>('all');
   const [editingMatchId, setEditingMatchId] = useState<string | null>(null);
+
+  // Respuesta háptica en teléfonos móviles (M3)
+  const triggerHaptic = () => {
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate(25);
+      } catch {
+        // Ignorar si el navegador restringe vibración
+      }
+    }
+  };
 
   // Estados temporales del editor de partido
   const [tempHomeScore, setTempHomeScore] = useState(0);
@@ -30,7 +42,13 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
 
   // Agrupar jornadas
   const rounds = Array.from(new Set(matches.map((m) => m.round))).sort((a, b) => a - b);
-  const filteredMatches = selectedRound === 'all' ? matches : matches.filter((m) => m.round === selectedRound);
+  const filteredMatches = matches
+    .filter((m) => selectedRound === 'all' || m.round === selectedRound)
+    .filter((m) => {
+      if (statusFilter === 'all') return true;
+      if (statusFilter === 'finished') return m.status === 'finished';
+      return m.status === 'pending' || m.status === 'in_progress';
+    });
 
   const startEditMatch = (m: Match) => {
     setEditingMatchId(m.id);
@@ -119,32 +137,106 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
         </div>
       )}
 
-      {/* Selector de Jornada / Fecha */}
+      {/* Selector de Jornada y Filtro de Estado (M3: Ergonomía Móvil) */}
       {rounds.length > 0 && (
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-          <button
-            onClick={() => setSelectedRound('all')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold uppercase tracking-wider transition whitespace-nowrap ${
-              selectedRound === 'all'
-                ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
-                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-            }`}
-          >
-            Todas ({matches.length})
-          </button>
-          {rounds.map((r) => (
+        <div className="space-y-2">
+          {/* Jornadas */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
             <button
-              key={r}
-              onClick={() => setSelectedRound(r)}
+              onClick={() => {
+                triggerHaptic();
+                setSelectedRound('all');
+              }}
               className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold uppercase tracking-wider transition whitespace-nowrap ${
-                selectedRound === r
+                selectedRound === 'all'
                   ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
                   : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
-              Fecha {r}
+              Todas ({matches.length})
             </button>
-          ))}
+            {rounds.map((r) => (
+              <button
+                key={r}
+                onClick={() => {
+                  triggerHaptic();
+                  setSelectedRound(r);
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold uppercase tracking-wider transition whitespace-nowrap ${
+                  selectedRound === r
+                    ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                Fecha {r}
+              </button>
+            ))}
+          </div>
+
+          {/* Subfiltro de estado */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-[11px] font-mono text-slate-500 uppercase">Estado:</span>
+            <button
+              onClick={() => {
+                triggerHaptic();
+                setStatusFilter('all');
+              }}
+              className={`px-2.5 py-1 rounded-md text-xs font-mono transition ${
+                statusFilter === 'all'
+                  ? 'bg-slate-800 text-cyan-300 font-bold border border-cyan-500/40'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Todos
+            </button>
+            <button
+              onClick={() => {
+                triggerHaptic();
+                setStatusFilter('finished');
+              }}
+              className={`px-2.5 py-1 rounded-md text-xs font-mono transition ${
+                statusFilter === 'finished'
+                  ? 'bg-slate-800 text-emerald-300 font-bold border border-emerald-500/40'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Jugados ({matches.filter((m) => m.status === 'finished').length})
+            </button>
+            <button
+              onClick={() => {
+                triggerHaptic();
+                setStatusFilter('pending');
+              }}
+              className={`px-2.5 py-1 rounded-md text-xs font-mono transition ${
+                statusFilter === 'pending'
+                  ? 'bg-slate-800 text-amber-300 font-bold border border-amber-500/40'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Por Jugar ({matches.filter((m) => m.status !== 'finished').length})
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Estado vacío cuando el filtro no arroja partidos */}
+      {matches.length > 0 && filteredMatches.length === 0 && (
+        <div className="text-center py-10 px-4 bg-slate-900/40 border border-slate-800 rounded-xl space-y-2">
+          <p className="text-sm font-semibold text-slate-300">
+            No hay partidos con los filtros seleccionados
+          </p>
+          <p className="text-xs text-slate-500">
+            Cambia la fecha o el estado seleccionado para ver más partidos.
+          </p>
+          <button
+            onClick={() => {
+              setSelectedRound('all');
+              setStatusFilter('all');
+            }}
+            className="mt-2 text-xs font-mono text-cyan-400 underline underline-offset-4"
+          >
+            Restablecer filtros
+          </button>
         </div>
       )}
 
@@ -282,7 +374,10 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                       <div className="flex items-center justify-center gap-2">
                         <button
                           type="button"
-                          onClick={() => setTempHomeScore((prev) => Math.max(0, prev - 1))}
+                          onClick={() => {
+                            triggerHaptic();
+                            setTempHomeScore((prev) => Math.max(0, prev - 1));
+                          }}
                           className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center justify-center transition active:scale-90"
                         >
                           <Minus className="w-4 h-4" />
@@ -295,7 +390,10 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                         />
                         <button
                           type="button"
-                          onClick={() => setTempHomeScore((prev) => prev + 1)}
+                          onClick={() => {
+                            triggerHaptic();
+                            setTempHomeScore((prev) => prev + 1);
+                          }}
                           className="w-8 h-8 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold flex items-center justify-center transition active:scale-90"
                         >
                           <Plus className="w-4 h-4" />
@@ -325,7 +423,10 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                       <div className="flex items-center justify-center gap-2">
                         <button
                           type="button"
-                          onClick={() => setTempAwayScore((prev) => Math.max(0, prev - 1))}
+                          onClick={() => {
+                            triggerHaptic();
+                            setTempAwayScore((prev) => Math.max(0, prev - 1));
+                          }}
                           className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-bold flex items-center justify-center transition active:scale-90"
                         >
                           <Minus className="w-4 h-4" />
@@ -338,7 +439,10 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                         />
                         <button
                           type="button"
-                          onClick={() => setTempAwayScore((prev) => prev + 1)}
+                          onClick={() => {
+                            triggerHaptic();
+                            setTempAwayScore((prev) => prev + 1);
+                          }}
                           className="w-8 h-8 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold flex items-center justify-center transition active:scale-90"
                         >
                           <Plus className="w-4 h-4" />
