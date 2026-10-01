@@ -1,0 +1,6 @@
+{
+  "name": "Torneo Relámpago",
+  "description": "App para organizar torneos deportivos en el recreo: registro de equipos, fixture equilibrado, resultados en vivo, tabla de posiciones automática y análisis de desempates con IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
