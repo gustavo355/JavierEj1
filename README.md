@@ -5,7 +5,7 @@
 ---
 
 ## 1. Probala ahora
-- **App publicada en vivo:** https://ais-pre-ndzkidjvv6mb33p5vcdy4e-572572190911.us-east1.run.app
+- **App publicada en vivo:** [https://ais-pre-ndzkidjvv6mb33p5vcdy4e-572572190911.us-east1.run.app](https://taskstream-19-955228364858.us-east1.run.app/)
 - **Código QR:** Generado y disponible en la app en el botón de cabecera.
 - **Usuario de prueba:** No requiere registro ni contraseña. Viene precargado con datos del recreo del 3° Año B (INDEL) para probar de inmediato.
 
