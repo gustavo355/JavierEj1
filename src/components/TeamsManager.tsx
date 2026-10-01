@@ -37,6 +37,7 @@ export const TeamsManager: React.FC<TeamsManagerProps> = ({
   const [isAddingTeam, setIsAddingTeam] = useState(false);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [selectedTeamForRoster, setSelectedTeamForRoster] = useState<Team | null>(null);
+  const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
 
   // Form states
   const [name, setName] = useState('');
@@ -392,11 +393,7 @@ export const TeamsManager: React.FC<TeamsManagerProps> = ({
                       <Edit3 className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => {
-                        if (confirm(`¿Eliminar al equipo "${team.name}" del torneo?`)) {
-                          onDeleteTeam(team.id);
-                        }
-                      }}
+                      onClick={() => setTeamToDelete(team)}
                       className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition"
                       title="Eliminar equipo"
                     >
@@ -575,6 +572,52 @@ export const TeamsManager: React.FC<TeamsManagerProps> = ({
                 className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold"
               >
                 Cerrar Plantilla
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación para eliminar equipo (M4: Seguro en iframes sin window.confirm) */}
+      {teamToDelete && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-rose-500/40 rounded-2xl w-full max-w-md p-5 shadow-2xl space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center flex-shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-base font-['Chakra_Petch']">
+                  ¿Eliminar a {teamToDelete.name}?
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Esta acción retirará al equipo de la competición.
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-300 bg-slate-950 p-3 rounded-lg border border-slate-800">
+              Se eliminará el equipo del torneo y cualquier partido programado en el fixture será retirado del calendario.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setTeamToDelete(null)}
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onDeleteTeam(teamToDelete.id);
+                  setTeamToDelete(null);
+                }}
+                className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs font-mono shadow-lg shadow-rose-600/20 transition active:scale-95 flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Confirmar Eliminación</span>
               </button>
             </div>
           </div>
