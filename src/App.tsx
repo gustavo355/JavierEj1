@@ -16,12 +16,14 @@ import { StandingsTable } from './components/StandingsTable';
 import { AiAnalysisModal } from './components/AiAnalysisModal';
 import { PracticeDossierModal } from './components/PracticeDossierModal';
 import { ExportImportModal } from './components/ExportImportModal';
-import { loadTournamentFromStorage, saveTournamentToStorage } from './utils/storageHelper';
+import { loadTournamentFromStorage, saveTournamentToStorage, sanitizeTournamentData } from './utils/storageHelper';
 
 export default function App() {
-  // Cargar estado inicial desde localStorage (M2: Que recuerde) o el demo representativo
+  // Cargar estado inicial desde localStorage (M2: Que recuerde) o el demo representativo (con saneamiento M4)
   const [tournament, setTournament] = useState<Tournament>(() => {
-    return loadTournamentFromStorage() || SAMPLE_TOURNAMENT;
+    const loaded = loadTournamentFromStorage();
+    if (loaded) return sanitizeTournamentData(loaded);
+    return sanitizeTournamentData(SAMPLE_TOURNAMENT);
   });
 
   // Pestaña activa
@@ -148,7 +150,7 @@ export default function App() {
     setActiveTab('fixture');
   };
 
-  // Actualización de marcador
+  // Actualización de marcador con límites defensivos (M4)
   const handleUpdateMatchScore = (
     matchId: string,
     homeScore: number,
@@ -158,18 +160,25 @@ export default function App() {
     awayCards?: number,
     notes?: string
   ) => {
+    // M4: Defensa contra desbordamiento de enteros y caracteres ilegales
+    const boundedHome = Math.min(50, Math.max(0, Math.floor(Number(homeScore) || 0)));
+    const boundedAway = Math.min(50, Math.max(0, Math.floor(Number(awayScore) || 0)));
+    const boundedHomeCards = Math.min(10, Math.max(0, Math.floor(Number(homeCards) || 0)));
+    const boundedAwayCards = Math.min(10, Math.max(0, Math.floor(Number(awayCards) || 0)));
+    const boundedNotes = notes ? notes.replace(/[<>]/g, '').trim().slice(0, 80) : undefined;
+
     setTournament((prev) => ({
       ...prev,
       matches: prev.matches.map((m) =>
         m.id === matchId
           ? {
               ...m,
-              homeScore,
-              awayScore,
+              homeScore: boundedHome,
+              awayScore: boundedAway,
               status,
-              homeYellowCards: homeCards,
-              awayYellowCards: awayCards,
-              notes,
+              homeYellowCards: boundedHomeCards,
+              awayYellowCards: boundedAwayCards,
+              notes: boundedNotes,
               playedAt: status === 'finished' ? new Date().toISOString() : m.playedAt,
             }
           : m

@@ -73,8 +73,8 @@ export const TeamsManager: React.FC<TeamsManagerProps> = ({
 
   const handleSaveTeam = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanName = name.trim();
-    const cleanCaptain = captain.trim();
+    const cleanName = name.replace(/[<>]/g, '').trim();
+    const cleanCaptain = captain.replace(/[<>]/g, '').trim();
 
     // M4 Validaciones estrictas
     if (!cleanName) {
@@ -127,7 +127,7 @@ export const TeamsManager: React.FC<TeamsManagerProps> = ({
     e.preventDefault();
     if (!selectedTeamForRoster) return;
 
-    const cleanPlayerName = playerName.trim();
+    const cleanPlayerName = playerName.replace(/[<>]/g, '').trim().slice(0, 30);
     if (!cleanPlayerName) {
       setPlayerError('Escribe el nombre del jugador.');
       return;
@@ -137,9 +137,9 @@ export const TeamsManager: React.FC<TeamsManagerProps> = ({
       return;
     }
 
-    const num = playerNumber ? parseInt(playerNumber, 10) : undefined;
-    if (num !== undefined && (isNaN(num) || num < 0 || num > 99)) {
-      setPlayerError('El número dorsal debe estar entre 0 y 99.');
+    const num = playerNumber ? parseInt(playerNumber.replace(/\D/g, ''), 10) : undefined;
+    if (num !== undefined && (isNaN(num) || num < 1 || num > 99)) {
+      setPlayerError('El número dorsal debe ser un entero entre 1 y 99.');
       return;
     }
 

@@ -61,11 +61,11 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
   };
 
   const handleSaveMatch = (matchId: string) => {
-    // M4 Validaciones
-    const validHome = Math.max(0, Math.floor(tempHomeScore || 0));
-    const validAway = Math.max(0, Math.floor(tempAwayScore || 0));
-    const validHomeCards = Math.max(0, Math.floor(tempHomeCards || 0));
-    const validAwayCards = Math.max(0, Math.floor(tempAwayCards || 0));
+    // M4 Validaciones defensivas: Limitar a rango válido (0 a 50 goles)
+    const validHome = Math.min(50, Math.max(0, Math.floor(tempHomeScore || 0)));
+    const validAway = Math.min(50, Math.max(0, Math.floor(tempAwayScore || 0)));
+    const validHomeCards = Math.min(10, Math.max(0, Math.floor(tempHomeCards || 0)));
+    const validAwayCards = Math.min(10, Math.max(0, Math.floor(tempAwayCards || 0)));
 
     onUpdateMatchScore(
       matchId,
@@ -74,7 +74,7 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
       tempStatus,
       validHomeCards,
       validAwayCards,
-      tempNotes.trim()
+      tempNotes.trim().slice(0, 80)
     );
     setEditingMatchId(null);
   };
@@ -286,14 +286,14 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                 </span>
               </div>
 
-              {/* Contenido principal: Marcador deportivo táctil */}
+              {/* Contenido principal: Marcador deportivo táctil protegido */}
               {!isEditing ? (
                 <div className="py-4">
-                  <div className="grid grid-cols-5 items-center gap-2">
+                  <div className="flex items-center justify-between gap-2 px-1">
                     {/* Local */}
-                    <div className="col-span-2 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="font-bold text-white text-sm sm:text-base font-['Chakra_Petch'] truncate">
+                    <div className="flex-1 min-w-0 text-right">
+                      <div className="flex items-center justify-end gap-1.5 min-w-0">
+                        <span className="font-bold text-white text-xs sm:text-sm font-['Chakra_Petch'] truncate block" title={match.homeTeamName}>
                           {match.homeTeamName}
                         </span>
                         <span className="text-xl flex-shrink-0">{homeTeam.emoji}</span>
@@ -301,24 +301,24 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                       <span className="text-[10px] font-mono text-slate-500 block mt-0.5">LOCAL</span>
                     </div>
 
-                    {/* Marcador central */}
-                    <div className="col-span-1 text-center">
-                      <div className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-slate-950 border border-slate-800 font-mono font-black text-xl sm:text-2xl text-white shadow-inner">
+                    {/* Marcador central protegido contra desbordamiento */}
+                    <div className="flex-shrink-0 mx-1">
+                      <div className="inline-flex items-center justify-center min-w-[72px] px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 font-mono font-black text-base sm:text-lg text-white shadow-inner">
                         {match.status === 'pending' ? (
-                          <span className="text-slate-500 text-sm tracking-widest">VS</span>
+                          <span className="text-slate-500 text-xs sm:text-sm tracking-widest">VS</span>
                         ) : (
-                          <span>
-                            {match.homeScore} - {match.awayScore}
+                          <span className="truncate">
+                            {Math.min(50, Math.max(0, match.homeScore))} - {Math.min(50, Math.max(0, match.awayScore))}
                           </span>
                         )}
                       </div>
                     </div>
 
                     {/* Visitante */}
-                    <div className="col-span-2 text-left">
-                      <div className="flex items-center justify-start gap-2">
+                    <div className="flex-1 min-w-0 text-left">
+                      <div className="flex items-center justify-start gap-1.5 min-w-0">
                         <span className="text-xl flex-shrink-0">{awayTeam.emoji}</span>
-                        <span className="font-bold text-white text-sm sm:text-base font-['Chakra_Petch'] truncate">
+                        <span className="font-bold text-white text-xs sm:text-sm font-['Chakra_Petch'] truncate block" title={match.awayTeamName}>
                           {match.awayTeamName}
                         </span>
                       </div>
@@ -384,15 +384,20 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                         </button>
                         <input
                           type="number"
+                          min={0}
+                          max={50}
                           value={tempHomeScore}
-                          onChange={(e) => setTempHomeScore(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                          className="w-12 h-10 text-center text-2xl font-black font-mono text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:outline-none focus:border-cyan-400"
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+                            setTempHomeScore(Math.min(50, Math.max(0, parseInt(digits, 10) || 0)));
+                          }}
+                          className="w-14 h-10 text-center text-xl sm:text-2xl font-black font-mono text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:outline-none focus:border-cyan-400"
                         />
                         <button
                           type="button"
                           onClick={() => {
                             triggerHaptic();
-                            setTempHomeScore((prev) => prev + 1);
+                            setTempHomeScore((prev) => Math.min(50, prev + 1));
                           }}
                           className="w-8 h-8 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold flex items-center justify-center transition active:scale-90"
                         >
@@ -409,7 +414,10 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                           min={0}
                           max={10}
                           value={tempHomeCards}
-                          onChange={(e) => setTempHomeCards(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+                            setTempHomeCards(Math.min(10, Math.max(0, parseInt(digits, 10) || 0)));
+                          }}
                           className="w-8 py-0.5 text-center bg-slate-900 border border-slate-700 rounded text-amber-300 text-xs font-mono"
                         />
                       </div>
@@ -433,15 +441,20 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                         </button>
                         <input
                           type="number"
+                          min={0}
+                          max={50}
                           value={tempAwayScore}
-                          onChange={(e) => setTempAwayScore(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                          className="w-12 h-10 text-center text-2xl font-black font-mono text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:outline-none focus:border-cyan-400"
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+                            setTempAwayScore(Math.min(50, Math.max(0, parseInt(digits, 10) || 0)));
+                          }}
+                          className="w-14 h-10 text-center text-xl sm:text-2xl font-black font-mono text-cyan-300 bg-slate-900 border border-slate-700 rounded-lg focus:outline-none focus:border-cyan-400"
                         />
                         <button
                           type="button"
                           onClick={() => {
                             triggerHaptic();
-                            setTempAwayScore((prev) => prev + 1);
+                            setTempAwayScore((prev) => Math.min(50, prev + 1));
                           }}
                           className="w-8 h-8 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold flex items-center justify-center transition active:scale-90"
                         >
@@ -458,7 +471,10 @@ export const FixtureViewer: React.FC<FixtureViewerProps> = ({
                           min={0}
                           max={10}
                           value={tempAwayCards}
-                          onChange={(e) => setTempAwayCards(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                          onChange={(e) => {
+                            const digits = e.target.value.replace(/\D/g, '').slice(0, 2);
+                            setTempAwayCards(Math.min(10, Math.max(0, parseInt(digits, 10) || 0)));
+                          }}
                           className="w-8 py-0.5 text-center bg-slate-900 border border-slate-700 rounded text-amber-300 text-xs font-mono"
                         />
                       </div>

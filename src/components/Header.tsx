@@ -123,11 +123,13 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
-            <span className="text-slate-400 flex items-center gap-1.5">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-2 flex items-center justify-between min-w-0">
+            <span className="text-slate-400 flex items-center gap-1.5 flex-shrink-0">
               <Flame className="w-3.5 h-3.5 text-rose-400" /> Goles
             </span>
-            <span className="text-white font-bold text-sm">{totalGoals}</span>
+            <span className="text-white font-bold text-sm truncate max-w-[90px] text-right font-mono" title={`${totalGoals} goles en el torneo`}>
+              {totalGoals > 999 ? '999+' : totalGoals}
+            </span>
           </div>
 
           <div className="bg-slate-900/60 border border-slate-800 rounded-lg p-2 flex items-center justify-between">
