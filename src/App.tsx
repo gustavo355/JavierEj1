@@ -193,7 +193,7 @@ export default function App() {
     );
   };
 
-  // M5: Llamada a endpoint de IA para análisis de desempates
+  // M5: Llamada a endpoint de IA para análisis de desempates con salida estructurada
   const handleFetchAiAnalysis = async () => {
     if (tournament.teams.length < 2) {
       showToast('Registra al menos 2 equipos para solicitar el análisis de IA.', 'error');
@@ -204,10 +204,14 @@ export default function App() {
     setAiError(null);
     setIsAiModalOpen(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
       const response = await fetch('/api/gemini/analyze-tournament', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           tournamentName: tournament.name,
           teams: tournament.teams,
@@ -224,8 +228,13 @@ export default function App() {
       setAiAnalysis(data);
     } catch (err: any) {
       console.error('Error fetching AI analysis:', err);
-      setAiError(err.message || 'No se pudo conectar con el servicio de análisis.');
+      if (err.name === 'AbortError') {
+        setAiError('Tiempo de espera agotado: la conexión en el patio es inestable.');
+      } else {
+        setAiError(err.message || 'No se pudo conectar con el servicio de análisis.');
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsAiLoading(false);
     }
   };
