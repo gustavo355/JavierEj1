@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, Upload, RefreshCw, Trash2, Check, AlertCircle, FileJson } from 'lucide-react';
+import { X, Download, Upload, RefreshCw, Trash2, Check, AlertCircle, FileJson, HardDrive } from 'lucide-react';
 import { Tournament } from '../types/tournament';
+import { exportTournamentToJson, validateAndParseTournamentJson, getStorageMetrics } from '../utils/storageHelper';
 
 interface ExportImportModalProps {
   isOpen: boolean;
@@ -21,22 +22,13 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [feedbackMessage, setFeedbackMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const metrics = getStorageMetrics();
 
   if (!isOpen) return null;
 
   const handleExport = () => {
     try {
-      const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(tournament, null, 2));
-      const downloadAnchor = document.createElement('a');
-      downloadAnchor.setAttribute('href', dataStr);
-      downloadAnchor.setAttribute(
-        'download',
-        `torneo_relampago_respaldo_${new Date().toISOString().slice(0, 10)}.json`
-      );
-      document.body.appendChild(downloadAnchor);
-      downloadAnchor.click();
-      downloadAnchor.remove();
-
+      exportTournamentToJson(tournament);
       setFeedbackMessage({
         type: 'success',
         text: '¡Respaldo JSON descargado con éxito! Puedes guardarlo o compartirlo.',
@@ -56,15 +48,11 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (!parsed.teams || !Array.isArray(parsed.teams)) {
-          throw new Error('El archivo JSON no contiene una estructura válida de torneo.');
-        }
-
-        onImportTournament(parsed);
+        const validated = validateAndParseTournamentJson(event.target?.result as string);
+        onImportTournament(validated);
         setFeedbackMessage({
           type: 'success',
-          text: `¡Torneo importado exitosamente con ${parsed.teams.length} equipos y ${parsed.matches?.length || 0} partidos!`,
+          text: `¡Torneo importado exitosamente con ${validated.teams.length} equipos y ${validated.matches?.length || 0} partidos!`,
         });
       } catch (err: any) {
         setFeedbackMessage({
@@ -103,6 +91,15 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
         </div>
 
         <div className="p-5 space-y-4 text-xs sm:text-sm">
+          {/* Métricas de almacenamiento M2 */}
+          <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between text-xs font-mono text-slate-400">
+            <div className="flex items-center gap-2">
+              <HardDrive className="w-4 h-4 text-cyan-400" />
+              <span>Espacio usado: <strong className="text-white">{(metrics.bytes / 1024).toFixed(1)} KB</strong></span>
+            </div>
+            <span>Guardado: <strong className="text-emerald-400">{metrics.lastSaved ? new Date(metrics.lastSaved).toLocaleTimeString() : 'Al instante'}</strong></span>
+          </div>
+
           {feedbackMessage && (
             <div
               className={`p-3 rounded-xl flex items-center gap-2 text-xs ${

@@ -16,24 +16,12 @@ import { StandingsTable } from './components/StandingsTable';
 import { AiAnalysisModal } from './components/AiAnalysisModal';
 import { PracticeDossierModal } from './components/PracticeDossierModal';
 import { ExportImportModal } from './components/ExportImportModal';
-
-const STORAGE_KEY = 'torneo_relampago_data_v1';
+import { loadTournamentFromStorage, saveTournamentToStorage } from './utils/storageHelper';
 
 export default function App() {
   // Cargar estado inicial desde localStorage (M2: Que recuerde) o el demo representativo
   const [tournament, setTournament] = useState<Tournament>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed && Array.isArray(parsed.teams)) {
-          return parsed;
-        }
-      }
-    } catch (e) {
-      console.error('Error leyendo localStorage:', e);
-    }
-    return SAMPLE_TOURNAMENT;
+    return loadTournamentFromStorage() || SAMPLE_TOURNAMENT;
   });
 
   // Pestaña activa
@@ -59,13 +47,9 @@ export default function App() {
     }, 3500);
   };
 
-  // Guardar en localStorage con cada cambio (M2)
+  // Guardar en localStorage y crear snapshot de seguridad con cada cambio (M2)
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(tournament));
-    } catch (e) {
-      console.error('Error guardando en localStorage:', e);
-    }
+    saveTournamentToStorage(tournament);
   }, [tournament]);
 
   // Recalcular tabla de posiciones en tiempo real (M1 y M2)
